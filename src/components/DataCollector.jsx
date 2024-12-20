@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Download, RefreshCw, List, AlertCircle, Plus, Trash2, ChevronDown } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const MAX_GROUPS = 10;
 const ITEMS_PER_PAGE = 5;
 
@@ -65,7 +65,7 @@ const DataCollector = () => {
         queryParams.append('notify', webhookUrl);
       }
 
-      const response = await fetch(`${API_BASE_URL}/trigger?${queryParams}`, {
+      const response = await fetch(`${API_URL}/api/trigger?${queryParams}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ const DataCollector = () => {
     if (!snapshotIdToCheck) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/progress/${snapshotIdToCheck}`, {
+      const response = await fetch(`${API_URL}/api/progress/${snapshotIdToCheck}`, {
         headers: {
           'apiToken': apiToken
         }
@@ -131,7 +131,7 @@ const DataCollector = () => {
       setError('');
 
       const fetchSnapshotsForStatus = async (status) => {
-        const response = await fetch(`${API_BASE_URL}/snapshots?datasetId=${datasetId}&status=${status}`, {
+        const response = await fetch(`${API_URL}/api/snapshots?datasetId=${datasetId}&status=${status}`, {
           headers: {
             'apiToken': apiToken
           }
@@ -166,7 +166,7 @@ const DataCollector = () => {
   const downloadSnapshot = async (id) => {
     setDownloading(id);
     try {
-      const response = await fetch(`${API_BASE_URL}/snapshot/${id}?format=csv`, {
+      const response = await fetch(`${API_URL}/api/snapshot/${id}?format=csv`, {
         headers: {
           'apiToken': apiToken
         }
