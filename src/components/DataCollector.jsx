@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Download, RefreshCw, List, AlertCircle, Plus, Trash2, ChevronDown } from 'lucide-react';
 
-const API_BASE_URL = 'https://scrap.bharatiyanews.com/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 const MAX_GROUPS = 10;
 const ITEMS_PER_PAGE = 5;
 

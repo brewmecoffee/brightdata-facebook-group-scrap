@@ -83,7 +83,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://localhost:5001/api/;
+        proxy_pass http://localhost:5000/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -92,7 +92,7 @@ server {
     }
 
     location /webhook {
-        proxy_pass http://localhost:5001/webhook;
+        proxy_pass http://localhost:5000/webhook;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -115,7 +115,7 @@ WorkingDirectory=/var/www/facebook-scraper/server
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
 Environment=NODE_ENV=production
-Environment=PORT=5001
+Environment=PORT=5000
 
 [Install]
 WantedBy=multi-user.target
@@ -149,7 +149,7 @@ sudo systemctl start facebook-scraper
 
 ## Environment Variables
 
-- `PORT` - Server port (default: 5001)
+- `PORT` - Server port (default: 5000)
 - `NODE_ENV` - Node environment (development/production)
 
 ## Usage

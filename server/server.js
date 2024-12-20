@@ -168,7 +168,7 @@ app.post('/webhook', (req, res) => {
   res.status(200).json({ message: 'Webhook received' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('API endpoints:');
