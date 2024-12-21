@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Download, RefreshCw, List, AlertCircle, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Download, RefreshCw, List, AlertCircle, ChevronDown } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const MAX_GROUPS = 10;
-const ITEMS_PER_PAGE = 5;
 
 const DataCollector = () => {
   const [apiToken, setApiToken] = useState('');
@@ -16,28 +14,12 @@ const DataCollector = () => {
   const [downloading, setDownloading] = useState('');
   const [error, setError] = useState('');
   const [expandedSections, setExpandedSections] = useState({ ready: false, running: false, failed: false });
+  const ITEMS_PER_PAGE = 5;
 
-  // Multiple groups state
-  const [groups, setGroups] = useState([
-    { url: '', startDate: '', endDate: '' }
-  ]);
-
-  const addGroup = () => {
-    if (groups.length < MAX_GROUPS) {
-      setGroups([...groups, { url: '', startDate: '', endDate: '' }]);
-    }
-  };
-
-  const removeGroup = (index) => {
-    const newGroups = groups.filter((_, i) => i !== index);
-    setGroups(newGroups.length ? newGroups : [{ url: '', startDate: '', endDate: '' }]);
-  };
-
-  const updateGroup = (index, field, value) => {
-    const newGroups = [...groups];
-    newGroups[index] = { ...newGroups[index], [field]: value };
-    setGroups(newGroups);
-  };
+  // New state for common date range and group IDs
+  const [groupIds, setGroupIds] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -50,10 +32,22 @@ const DataCollector = () => {
       setLoading(true);
       setError('');
 
-      const requestBody = groups.filter(group => group.url).map(group => ({
-        url: group.url,
-        start_date: formatDate(group.startDate),
-        end_date: formatDate(group.endDate)
+      // Split and trim group IDs
+      const ids = groupIds.split(',').map(id => id.trim()).filter(id => id);
+
+      if (!ids.length) {
+        throw new Error('Please enter at least one group ID');
+      }
+
+      if (ids.length > 10) {
+        throw new Error('Maximum 10 groups allowed');
+      }
+
+      // Create request body with group URLs and common date range
+      const requestBody = ids.map(id => ({
+        url: `https://facebook.com/groups/${id}`,
+        start_date: formatDate(startDate),
+        end_date: formatDate(endDate)
       }));
 
       const queryParams = new URLSearchParams({
@@ -259,56 +253,6 @@ const DataCollector = () => {
     );
   };
 
-  const GroupInput = ({ group, index }) => (
-      <div className="p-4 border rounded-lg bg-gray-50">
-        <div className="flex justify-between items-start mb-4">
-          <h4 className="text-sm font-medium text-gray-700">Group {index + 1}</h4>
-          {groups.length > 1 && (
-              <button
-                  onClick={() => removeGroup(index)}
-                  className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <input
-                type="text"
-                value={group.url}
-                onChange={(e) => updateGroup(index, 'url', e.target.value)}
-                className="w-full p-2 border rounded-md shadow-sm"
-                placeholder="https://facebook.com/groups/..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <input
-                  type="date"
-                  value={group.startDate}
-                  onChange={(e) => updateGroup(index, 'startDate', e.target.value)}
-                  className="w-full pl-8 p-2 border rounded-md shadow-sm"
-              />
-            </div>
-
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <input
-                  type="date"
-                  value={group.endDate}
-                  onChange={(e) => updateGroup(index, 'endDate', e.target.value)}
-                  className="w-full pl-8 p-2 border rounded-md shadow-sm"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-  );
-
   return (
       <div className="bg-white shadow rounded-lg p-6">
         <div className="space-y-6">
@@ -335,30 +279,50 @@ const DataCollector = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="block text-sm font-medium text-gray-700">Facebook Groups</label>
-              {groups.length < MAX_GROUPS && (
-                  <button
-                      onClick={addGroup}
-                      className="flex items-center text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Group
-                  </button>
-              )}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Facebook Group IDs (comma-separated)</label>
+              <textarea
+                  value={groupIds}
+                  onChange={(e) => setGroupIds(e.target.value)}
+                  className="w-full p-2 border rounded-md shadow-sm h-24"
+                  placeholder="205501299244052, 1675887706091051, 578757699317247..."
+              />
+              <p className="text-sm text-gray-500">Enter up to 10 group IDs, separated by commas</p>
             </div>
 
-            <div className="space-y-4">
-              {groups.map((group, index) => (
-                  <GroupInput key={index} group={group} index={index} />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                <div className="relative mt-1">
+                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">End Date</label>
+                <div className="relative mt-1">
+                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button
                 onClick={triggerCollection}
-                disabled={loading || !apiToken || !groups.some(g => g.url)}
+                disabled={loading || !apiToken || !groupIds.trim() || !startDate || !endDate}
                 className="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {loading ? (

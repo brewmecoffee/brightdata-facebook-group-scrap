@@ -12,6 +12,29 @@ const formatApiToken = (token) => {
   return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 };
 
+// Helper function to validate a date string
+const isValidDateFormat = (dateStr) => {
+  // Expected format: MM-DD-YYYY
+  const regex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+  if (!regex.test(dateStr)) return false;
+  
+  const [month, day, year] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getMonth() === month - 1 && date.getDate() === day && date.getFullYear() === year;
+};
+
+// Helper function to validate Facebook group URLs and IDs
+const isValidGroupUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname === 'facebook.com' && 
+           urlObj.pathname.startsWith('/groups/') && 
+           urlObj.pathname.split('/')[2]?.length > 0;
+  } catch {
+    return false;
+  }
+};
+
 // Proxy endpoint for triggering data collection
 app.post('/api/trigger', async (req, res) => {
   try {
@@ -23,8 +46,48 @@ app.post('/api/trigger', async (req, res) => {
     const { datasetId, notify } = req.query;
     
     // Validate number of groups
-    if (!Array.isArray(req.body) || req.body.length > 10) {
+    if (!Array.isArray(req.body) || req.body.length === 0) {
+      return res.status(400).json({ error: 'At least one group is required' });
+    }
+    
+    if (req.body.length > 10) {
       return res.status(400).json({ error: 'Maximum 10 groups allowed' });
+    }
+
+    // Validate each group's data
+    for (const group of req.body) {
+      if (!group.url || !group.start_date || !group.end_date) {
+        return res.status(400).json({ 
+          error: 'Each group must have url, start_date, and end_date' 
+        });
+      }
+
+      if (!isValidGroupUrl(group.url)) {
+        return res.status(400).json({ 
+          error: 'Invalid Facebook group URL: ' + group.url 
+        });
+      }
+
+      if (!isValidDateFormat(group.start_date)) {
+        return res.status(400).json({ 
+          error: 'Invalid start date format. Use MM-DD-YYYY: ' + group.start_date 
+        });
+      }
+
+      if (!isValidDateFormat(group.end_date)) {
+        return res.status(400).json({ 
+          error: 'Invalid end date format. Use MM-DD-YYYY: ' + group.end_date 
+        });
+      }
+
+      // Validate date range
+      const startDate = new Date(group.start_date);
+      const endDate = new Date(group.end_date);
+      if (endDate < startDate) {
+        return res.status(400).json({ 
+          error: 'End date cannot be earlier than start date' 
+        });
+      }
     }
 
     const queryParams = new URLSearchParams({
@@ -38,7 +101,10 @@ app.post('/api/trigger', async (req, res) => {
 
     console.log('Making request to Brightdata with:', {
       url: `https://api.brightdata.com/datasets/v3/trigger`,
-      groups: req.body.length,
+      groups: req.body.map(g => ({
+        url: g.url,
+        date_range: `${g.start_date} to ${g.end_date}`
+      })),
       notify: !!notify
     });
 
@@ -59,7 +125,8 @@ app.post('/api/trigger', async (req, res) => {
     console.error('Brightdata error:', {
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
+      stack: error.stack
     });
     
     res.status(error.response?.status || 500).json({
