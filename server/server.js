@@ -50,8 +50,8 @@ app.post('/api/trigger', async (req, res) => {
       return res.status(400).json({ error: 'At least one group is required' });
     }
     
-    if (req.body.length > 10) {
-      return res.status(400).json({ error: 'Maximum 10 groups allowed' });
+    if (req.body.length > 50) {
+      return res.status(400).json({ error: 'Maximum 50 groups allowed' });
     }
 
     // Validate each group's data
