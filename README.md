@@ -41,7 +41,7 @@ git clone [repository-url]
 cd facebook-scraper
 ```
 
-2. Install dependencies:
+1. Install dependencies:
 ```bash
 # Install frontend dependencies
 yarn install
@@ -52,7 +52,7 @@ yarn install
 cd ..
 ```
 
-3. Start the development servers:
+1. Start the development servers:
 ```bash
 # Start backend server (from server directory)
 cd server
@@ -71,7 +71,7 @@ The application will be available at `http://localhost:3000`
 yarn build
 ```
 
-2. Set up Nginx configuration:
+1. Set up Nginx configuration:
 ```nginx
 server {
     listen 80;
@@ -103,7 +103,7 @@ server {
 }
 ```
 
-3. Create systemd service:
+1. Create systemd service:
 ```ini
 [Unit]
 Description=Facebook Scraper Node.js Server
@@ -122,7 +122,7 @@ Environment=PORT=5000
 WantedBy=multi-user.target
 ```
 
-4. Deploy the application:
+1. Deploy the application:
 ```bash
 # Create directories
 sudo mkdir -p /var/www/facebook-scraper
