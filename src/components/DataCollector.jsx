@@ -16,16 +16,12 @@ const DataCollector = () => {
   const [expandedSections, setExpandedSections] = useState({ ready: false, running: false, failed: false });
   const ITEMS_PER_PAGE = 5;
 
-  // New state for common date range and group IDs
+  // Updated state for common date range, time, and group IDs
   const [groupIds, setGroupIds] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}-${date.getFullYear()}`;
-  };
+  const [startTime, setStartTime] = useState('00:00:00');
+  const [endTime, setEndTime] = useState('23:59:59');
 
   const triggerCollection = async () => {
     try {
@@ -43,11 +39,13 @@ const DataCollector = () => {
         throw new Error('Maximum 100 groups allowed');
       }
 
-      // Create request body with group URLs and common date range
+      // Create request body with group URLs, dates and times
       const requestBody = ids.map(id => ({
         url: `https://facebook.com/groups/${id}`,
-        start_date: formatDate(startDate),
-        end_date: formatDate(endDate)
+        start_date: startDate,
+        end_date: endDate,
+        start_time: startTime,
+        end_time: endTime
       }));
 
       const queryParams = new URLSearchParams({
@@ -291,30 +289,58 @@ const DataCollector = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Start Date and Time */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                <div className="relative mt-1">
-                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full pl-8 p-2 border rounded-md shadow-sm"
-                  />
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Clock className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <input
+                        type="time"
+                        step="1"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value + ':00')}
+                        className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                    />
+                  </div>
                 </div>
+                <p className="mt-1 text-sm text-gray-500">Time is in IST (GMT+5:30)</p>
               </div>
 
+              {/* End Date and Time */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">End Date</label>
-                <div className="relative mt-1">
-                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full pl-8 p-2 border rounded-md shadow-sm"
-                  />
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Clock className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <input
+                        type="time"
+                        step="1"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value + ':00')}
+                        className="w-full pl-8 p-2 border rounded-md shadow-sm"
+                    />
+                  </div>
                 </div>
+                <p className="mt-1 text-sm text-gray-500">Time is in IST (GMT+5:30)</p>
               </div>
             </div>
           </div>

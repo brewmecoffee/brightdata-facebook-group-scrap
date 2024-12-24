@@ -12,15 +12,34 @@ const formatApiToken = (token) => {
   return token.startsWith('Bearer ') ? token : `Bearer ${token}`;
 };
 
-// Helper function to validate a date string
+// Helper function to convert local datetime to ISO string with IST offset
+const convertToISOWithIST = (dateStr, timeStr = '00:00:00') => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+  
+  // Create date in local timezone
+  const date = new Date(year, month - 1, day, hours, minutes, seconds);
+  
+  // Format with IST offset (+05:30)
+  return date.toISOString().slice(0, 19) + '+05:30';
+};
+
+// Helper function to validate a date string in YYYY-MM-DD format
 const isValidDateFormat = (dateStr) => {
-  // Expected format: MM-DD-YYYY
-  const regex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+  // Expected format: YYYY-MM-DD
+  const regex = /^\d{4}-([0][1-9]|[1][0-2])-([0][1-9]|[1-2][0-9]|[3][0-1])$/;
   if (!regex.test(dateStr)) return false;
   
-  const [month, day, year] = dateStr.split('-').map(Number);
+  const [year, month, day] = dateStr.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return date.getMonth() === month - 1 && date.getDate() === day && date.getFullYear() === year;
+};
+
+// Helper function to validate time string in HH:mm:ss format
+const isValidTimeFormat = (timeStr) => {
+  if (!timeStr) return true; // Time is optional
+  const regex = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+  return regex.test(timeStr);
 };
 
 // Helper function to validate Facebook group URLs and IDs
@@ -68,27 +87,46 @@ app.post('/api/trigger', async (req, res) => {
         });
       }
 
+      // Validate start date and time
       if (!isValidDateFormat(group.start_date)) {
         return res.status(400).json({ 
-          error: 'Invalid start date format. Use MM-DD-YYYY: ' + group.start_date 
+          error: 'Invalid start date format. Use YYYY-MM-DD: ' + group.start_date 
+        });
+      }
+      if (group.start_time && !isValidTimeFormat(group.start_time)) {
+        return res.status(400).json({ 
+          error: 'Invalid start time format. Use HH:mm:ss: ' + group.start_time 
         });
       }
 
+      // Validate end date and time
       if (!isValidDateFormat(group.end_date)) {
         return res.status(400).json({ 
-          error: 'Invalid end date format. Use MM-DD-YYYY: ' + group.end_date 
+          error: 'Invalid end date format. Use YYYY-MM-DD: ' + group.end_date 
+        });
+      }
+      if (group.end_time && !isValidTimeFormat(group.end_time)) {
+        return res.status(400).json({ 
+          error: 'Invalid end time format. Use HH:mm:ss: ' + group.end_time 
         });
       }
 
       // Validate date range
-      const startDate = new Date(group.start_date);
-      const endDate = new Date(group.end_date);
-      if (endDate < startDate) {
+      const startDateTime = new Date(group.start_date + 'T' + (group.start_time || '00:00:00'));
+      const endDateTime = new Date(group.end_date + 'T' + (group.end_time || '23:59:59'));
+      if (endDateTime < startDateTime) {
         return res.status(400).json({ 
-          error: 'End date cannot be earlier than start date' 
+          error: 'End datetime cannot be earlier than start datetime' 
         });
       }
     }
+
+    // Transform the request body to include ISO timestamps with IST offset
+    const transformedBody = req.body.map(group => ({
+      url: group.url,
+      start_date: convertToISOWithIST(group.start_date, group.start_time),
+      end_date: convertToISOWithIST(group.end_date, group.end_time || '23:59:59')
+    }));
 
     const queryParams = new URLSearchParams({
       dataset_id: datasetId,
@@ -101,16 +139,17 @@ app.post('/api/trigger', async (req, res) => {
 
     console.log('Making request to Brightdata with:', {
       url: `https://api.brightdata.com/datasets/v3/trigger`,
-      groups: req.body.map(g => ({
+      groups: transformedBody.map(g => ({
         url: g.url,
-        date_range: `${g.start_date} to ${g.end_date}`
+        start_date: g.start_date,
+        end_date: g.end_date
       })),
       notify: !!notify
     });
 
     const response = await axios.post(
       `https://api.brightdata.com/datasets/v3/trigger?${queryParams}`,
-      req.body,
+      transformedBody,
       {
         headers: {
           'Authorization': apiToken,

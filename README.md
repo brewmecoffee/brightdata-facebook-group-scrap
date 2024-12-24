@@ -1,11 +1,12 @@
 # Facebook Group Data Collector
 
-A web application that facilitates data collection from Facebook groups using the Brightdata API. This tool allows users to collect data from multiple Facebook groups simultaneously, with support for date ranges and webhook notifications.
+A web application that facilitates data collection from Facebook groups using the Brightdata API. This tool allows users to collect data from multiple Facebook groups simultaneously, with support for date-time ranges and webhook notifications.
 
 ## Features
 
-- Collect data from up to 10 Facebook groups simultaneously
-- Date range selection for each group
+- Collect data from up to 100 Facebook groups simultaneously
+- Date and time range selection for each group (in IST timezone)
+- Support for ISO 8601 timestamp format (YYYY-MM-DDTHH:mm:ss+05:30)
 - Real-time status monitoring
 - Webhook notifications for collection status updates
 - Download collected data in CSV format
@@ -142,6 +143,9 @@ sudo systemctl start facebook-scraper
 ## API Endpoints
 
 - `POST /api/trigger` - Start data collection
+  - Request body format: `[{ url: string, start_date: string, end_date: string, start_time: string, end_time: string }]`
+  - Dates should be in YYYY-MM-DD format
+  - Times should be in HH:mm:ss format (IST timezone)
 - `GET /api/progress/:snapshotId` - Check collection status
 - `GET /api/snapshots` - Get snapshots list
 - `GET /api/snapshot/:snapshotId` - Download snapshot
@@ -155,11 +159,18 @@ sudo systemctl start facebook-scraper
 ## Usage
 
 1. Enter your Brightdata API token
-2. Add Facebook group URLs (up to 10)
+2. Add Facebook group URLs (up to 100)
 3. Set date ranges for data collection
+   - Select start and end dates
+   - Choose start and end times (in IST timezone)
+   - Times will be converted to ISO 8601 format with IST offset (+05:30)
 4. Optionally add a webhook URL for notifications
 5. Start collection and monitor progress
 6. Download data when collection is complete
+
+### Time Format Examples
+- Start: `2024-12-20` at `00:00:00` becomes `2024-12-20T00:00:00+05:30`
+- End: `2024-12-21` at `23:59:59` becomes `2024-12-21T23:59:59+05:30`
 
 ## Monitoring
 
