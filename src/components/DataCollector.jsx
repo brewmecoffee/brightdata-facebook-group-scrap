@@ -39,8 +39,8 @@ const DataCollector = () => {
         throw new Error('Please enter at least one group ID');
       }
 
-      if (ids.length > 50) {
-        throw new Error('Maximum 50 groups allowed');
+      if (ids.length > 100) {
+        throw new Error('Maximum 100 groups allowed');
       }
 
       // Create request body with group URLs and common date range
@@ -287,7 +287,7 @@ const DataCollector = () => {
                   className="w-full p-2 border rounded-md shadow-sm h-24"
                   placeholder="205501299244052, 1675887706091051, 578757699317247..."
               />
-              <p className="text-sm text-gray-500">Enter up to 50 group IDs, separated by commas</p>
+              <p className="text-sm text-gray-500">Enter up to 100 group IDs, separated by commas</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
