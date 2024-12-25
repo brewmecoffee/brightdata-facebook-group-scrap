@@ -302,50 +302,54 @@ const DataCollector = () => {
                         className="w-full pl-8 p-2 border rounded-md shadow-sm"
                     />
                   </div>
-                  <div className="relative flex gap-1">
+                  <div className="relative">
                     <Clock className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                    <select
-                        value={startTime.split(':')[0]}
-                        onChange={(e) => {
-                          const [_, m, s] = startTime.split(':');
-                          setStartTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
-                        }}
-                        className="pl-8 p-2 border rounded-md shadow-sm w-20"
-                    >
-                      {Array.from({length: 24}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
-                    <select
-                        value={startTime.split(':')[1]}
-                        onChange={(e) => {
-                          const [h, _, s] = startTime.split(':');
-                          setStartTime(`${h}:${e.target.value}:${s}`);
-                        }}
-                        className="p-2 border rounded-md shadow-sm w-16"
-                    >
-                      {Array.from({length: 60}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
-                    <select
-                        value={startTime.split(':')[2]}
-                        onChange={(e) => {
-                          const [h, m, _] = startTime.split(':');
-                          setStartTime(`${h}:${m}:${e.target.value}`);
-                        }}
-                        className="p-2 border rounded-md shadow-sm w-16"
-                    >
-                      {Array.from({length: 60}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
+                    <div className="flex">
+                      <select
+                          value={startTime.split(':')[0]}
+                          onChange={(e) => {
+                            const [_, m, s] = startTime.split(':');
+                            setStartTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
+                          }}
+                          className="pl-8 p-2 border rounded-l-md shadow-sm w-24"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                      <span className="inline-flex items-center px-1 text-gray-500">:</span>
+                      <select
+                          value={startTime.split(':')[1]}
+                          onChange={(e) => {
+                            const [h, _, s] = startTime.split(':');
+                            setStartTime(`${h}:${e.target.value}:${s}`);
+                          }}
+                          className="p-2 border-t border-b border-r shadow-sm w-20"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                      <span className="inline-flex items-center px-1 text-gray-500">:</span>
+                      <select
+                          value={startTime.split(':')[2]}
+                          onChange={(e) => {
+                            const [h, m, _] = startTime.split(':');
+                            setStartTime(`${h}:${m}:${e.target.value}`);
+                          }}
+                          className="p-2 border rounded-r-md shadow-sm w-20"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">Time is in IST (GMT+5:30)</p>
@@ -364,50 +368,54 @@ const DataCollector = () => {
                         className="w-full pl-8 p-2 border rounded-md shadow-sm"
                     />
                   </div>
-                  <div className="relative flex gap-1">
+                  <div className="relative">
                     <Clock className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                    <select
-                        value={endTime.split(':')[0]}
-                        onChange={(e) => {
-                          const [_, m, s] = endTime.split(':');
-                          setEndTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
-                        }}
-                        className="pl-8 p-2 border rounded-md shadow-sm w-20"
-                    >
-                      {Array.from({length: 24}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
-                    <select
-                        value={endTime.split(':')[1]}
-                        onChange={(e) => {
-                          const [h, _, s] = endTime.split(':');
-                          setEndTime(`${h}:${e.target.value}:${s}`);
-                        }}
-                        className="p-2 border rounded-md shadow-sm w-16"
-                    >
-                      {Array.from({length: 60}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
-                    <select
-                        value={endTime.split(':')[2]}
-                        onChange={(e) => {
-                          const [h, m, _] = endTime.split(':');
-                          setEndTime(`${h}:${m}:${e.target.value}`);
-                        }}
-                        className="p-2 border rounded-md shadow-sm w-16"
-                    >
-                      {Array.from({length: 60}, (_, i) => (
-                          <option key={i} value={i.toString().padStart(2, '0')}>
-                            {i.toString().padStart(2, '0')}
-                          </option>
-                      ))}
-                    </select>
+                    <div className="flex">
+                      <select
+                          value={endTime.split(':')[0]}
+                          onChange={(e) => {
+                            const [_, m, s] = endTime.split(':');
+                            setEndTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
+                          }}
+                          className="pl-8 p-2 border rounded-l-md shadow-sm w-24"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                      <span className="inline-flex items-center px-1 text-gray-500">:</span>
+                      <select
+                          value={endTime.split(':')[1]}
+                          onChange={(e) => {
+                            const [h, _, s] = endTime.split(':');
+                            setEndTime(`${h}:${e.target.value}:${s}`);
+                          }}
+                          className="p-2 border-t border-b border-r shadow-sm w-20"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                      <span className="inline-flex items-center px-1 text-gray-500">:</span>
+                      <select
+                          value={endTime.split(':')[2]}
+                          onChange={(e) => {
+                            const [h, m, _] = endTime.split(':');
+                            setEndTime(`${h}:${m}:${e.target.value}`);
+                          }}
+                          className="p-2 border rounded-r-md shadow-sm w-20"
+                      >
+                        {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i.toString().padStart(2, '0')}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">Time is in IST (GMT+5:30)</p>
