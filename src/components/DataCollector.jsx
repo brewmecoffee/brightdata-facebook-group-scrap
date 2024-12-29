@@ -12,6 +12,7 @@ const DataCollector = () => {
   const [snapshots, setSnapshots] = useState({ ready: [], running: [], failed: [] });
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState('');
+  const [canceling, setCanceling] = useState('');
   const [error, setError] = useState('');
   const [expandedSections, setExpandedSections] = useState({ ready: false, running: false, failed: false });
   const ITEMS_PER_PAGE = 5;
@@ -117,6 +118,35 @@ const DataCollector = () => {
     }
   };
 
+  const cancelSnapshot = async (id) => {
+    try {
+      setCanceling(id);
+      setError('');
+
+      const response = await fetch(`${API_URL}/api/snapshot/${id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apiToken': apiToken
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel collection');
+      }
+
+      // Refresh snapshots list after cancellation
+      await getSnapshots();
+    } catch (err) {
+      console.error('Cancel error:', err);
+      setError(err.message || 'Failed to cancel collection');
+    } finally {
+      setCanceling('');
+    }
+  };
+
   const getSnapshots = async () => {
     try {
       setLoading(true);
@@ -142,10 +172,19 @@ const DataCollector = () => {
         fetchSnapshotsForStatus('failed')
       ]);
 
+      // Sort snapshots by timestamp in descending order
+      const sortSnapshots = (snapshots) => {
+        return [...snapshots].sort((a, b) => {
+          const timestampA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const timestampB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timestampB - timestampA; // Descending order (newest first)
+        });
+      };
+
       setSnapshots({
-        ready: ready || [],
-        running: running || [],
-        failed: failed || []
+        ready: sortSnapshots(ready || []),
+        running: sortSnapshots(running || []),
+        failed: sortSnapshots(failed || [])
       });
     } catch (err) {
       console.error('Snapshots error:', err);
@@ -214,7 +253,21 @@ const DataCollector = () => {
           <div className="space-y-2 mt-2">
             {displayedSnapshots.map((snapshot) => (
                 <div key={snapshot.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <p className="font-medium text-gray-900">{snapshot.id}</p>
+                  <div>
+                    <p className="font-medium text-gray-900">{snapshot.id}</p>
+                    {snapshot.timestamp && (
+                        <p className="text-sm text-gray-500">
+                          {new Date(snapshot.timestamp).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </p>
+                    )}
+                  </div>
                   {status === 'ready' && (
                       <button
                           onClick={() => downloadSnapshot(snapshot.id)}
@@ -229,11 +282,25 @@ const DataCollector = () => {
                         {downloading === snapshot.id ? 'Downloading...' : 'Download'}
                       </button>
                   )}
+                  {status === 'running' && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => cancelSnapshot(snapshot.id)}
+                            disabled={!!canceling}
+                            className="flex items-center px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {canceling === snapshot.id ? (
+                              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                          )}
+                          {canceling === snapshot.id ? 'Canceling...' : 'Cancel'}
+                        </button>
+                        <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />
+                      </div>
+                  )}
                   {status === 'failed' && (
                       <AlertCircle className="h-5 w-5 text-red-500" />
-                  )}
-                  {status === 'running' && (
-                      <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />
                   )}
                 </div>
             ))}
@@ -254,6 +321,7 @@ const DataCollector = () => {
   return (
       <div className="bg-white shadow rounded-lg p-6">
         <div className="space-y-6">
+          {/* API Token Input */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">API Token</label>
             <input
@@ -265,6 +333,7 @@ const DataCollector = () => {
             />
           </div>
 
+          {/* Webhook URL Input */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Webhook URL (Optional)</label>
             <input
@@ -276,7 +345,9 @@ const DataCollector = () => {
             />
           </div>
 
+          {/* Group IDs and Date/Time Inputs */}
           <div className="space-y-4">
+            {/* Group IDs Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Facebook Group IDs (comma-separated)</label>
               <textarea
@@ -288,6 +359,7 @@ const DataCollector = () => {
               <p className="text-sm text-gray-500">Enter up to 100 group IDs, separated by commas</p>
             </div>
 
+            {/* Date and Time Selectors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Start Date and Time */}
               <div>
@@ -422,73 +494,91 @@ const DataCollector = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-                onClick={triggerCollection}
-                disabled={loading || !apiToken || !groupIds.trim() || !startDate || !endDate}
-                className="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? (
-                  <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-              ) : (
-                  <Clock className="h-4 w-4 mr-2" />
-              )}
-              Start Collection
-            </button>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+              onClick={triggerCollection}
+              disabled={loading || !apiToken || !groupIds.trim() || !startDate || !endDate}
+              className="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loading ? (
+                <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+            ) : (
+                <Clock className="h-4 w-4 mr-2" />
+            )}
+            Start Collection
+          </button>
 
-            <button
-                onClick={getSnapshots}
-                disabled={loading || !apiToken}
-                className="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
-            >
-              <List className="h-4 w-4 mr-2" />
-              View Snapshots
-            </button>
-          </div>
+          <button
+              onClick={getSnapshots}
+              disabled={loading || !apiToken}
+              className="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+          >
+            <List className="h-4 w-4 mr-2" />
+            View Snapshots
+          </button>
+        </div>
 
-          {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Error</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
-                    </div>
+        {/* Error Message */}
+        {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{error}</p>
                   </div>
                 </div>
               </div>
-          )}
+            </div>
+        )}
 
-          {status && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                <h3 className="text-lg font-medium text-gray-900">Current Snapshot Status</h3>
-                <p className={`mt-1 ${getStatusColor(status)} font-medium`}>
-                  Status: {status.charAt(0).toUpperCase() + status.slice(1)}
-                </p>
-                {status === 'ready' && (
-                    <button
-                        onClick={() => downloadSnapshot(snapshotId)}
-                        disabled={!!downloading}
-                        className="mt-2 flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
-                      {downloading === snapshotId ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                          <Download className="h-4 w-4 mr-2" />
-                      )}
-                      {downloading === snapshotId ? 'Downloading...' : 'Download Data'}
-                    </button>
-                )}
-              </div>
-          )}
+        {/* Current Snapshot Status */}
+        {status && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-md">
+              <h3 className="text-lg font-medium text-gray-900">Current Snapshot Status</h3>
+              <p className={`mt-1 ${getStatusColor(status)} font-medium`}>
+                Status: {status.charAt(0).toUpperCase() + status.slice(1)}
+              </p>
+              {status === 'running' && (
+                  <button
+                      onClick={() => cancelSnapshot(snapshotId)}
+                      disabled={!!canceling}
+                      className="mt-2 flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {canceling === snapshotId ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                    )}
+                    {canceling === snapshotId ? 'Canceling Collection...' : 'Cancel Collection'}
+                  </button>
+              )}
+              {status === 'ready' && (
+                  <button
+                      onClick={() => downloadSnapshot(snapshotId)}
+                      disabled={!!downloading}
+                      className="mt-2 flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {downloading === snapshotId ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                    )}
+                    {downloading === snapshotId ? 'Downloading...' : 'Download Data'}
+                  </button>
+              )}
+            </div>
+        )}
 
-          <div className="mt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Available Snapshots</h3>
-            <SnapshotsList title="Ready Snapshots" snapshots={snapshots.ready} status="ready" />
-            <SnapshotsList title="Running Snapshots" snapshots={snapshots.running} status="running" />
-            <SnapshotsList title="Failed Snapshots" snapshots={snapshots.failed} status="failed" />
-          </div>
+        {/* Available Snapshots */}
+        <div className="mt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Available Snapshots</h3>
+          <SnapshotsList title="Ready Snapshots" snapshots={snapshots.ready} status="ready" />
+          <SnapshotsList title="Running Snapshots" snapshots={snapshots.running} status="running" />
+          <SnapshotsList title="Failed Snapshots" snapshots={snapshots.failed} status="failed" />
         </div>
       </div>
   );

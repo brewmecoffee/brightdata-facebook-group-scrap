@@ -16,10 +16,10 @@ const formatApiToken = (token) => {
 const convertToISOWithIST = (dateStr, timeStr = '00:00:00') => {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-  
+
   // Create date in local timezone
   const date = new Date(year, month - 1, day, hours, minutes, seconds);
-  
+
   // Format with IST offset (+05:30)
   return date.toISOString().slice(0, 19) + '+05:30';
 };
@@ -29,7 +29,7 @@ const isValidDateFormat = (dateStr) => {
   // Expected format: YYYY-MM-DD
   const regex = /^\d{4}-([0][1-9]|[1][0-2])-([0][1-9]|[1-2][0-9]|[3][0-1])$/;
   if (!regex.test(dateStr)) return false;
-  
+
   const [year, month, day] = dateStr.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return date.getMonth() === month - 1 && date.getDate() === day && date.getFullYear() === year;
@@ -46,9 +46,9 @@ const isValidTimeFormat = (timeStr) => {
 const isValidGroupUrl = (url) => {
   try {
     const urlObj = new URL(url);
-    return urlObj.hostname === 'facebook.com' && 
-           urlObj.pathname.startsWith('/groups/') && 
-           urlObj.pathname.split('/')[2]?.length > 0;
+    return urlObj.hostname === 'facebook.com' &&
+        urlObj.pathname.startsWith('/groups/') &&
+        urlObj.pathname.split('/')[2]?.length > 0;
   } catch {
     return false;
   }
@@ -63,12 +63,12 @@ app.post('/api/trigger', async (req, res) => {
     }
 
     const { datasetId, notify } = req.query;
-    
+
     // Validate number of groups
     if (!Array.isArray(req.body) || req.body.length === 0) {
       return res.status(400).json({ error: 'At least one group is required' });
     }
-    
+
     if (req.body.length > 100) {
       return res.status(400).json({ error: 'Maximum 100 groups allowed' });
     }
@@ -76,38 +76,38 @@ app.post('/api/trigger', async (req, res) => {
     // Validate each group's data
     for (const group of req.body) {
       if (!group.url || !group.start_date || !group.end_date) {
-        return res.status(400).json({ 
-          error: 'Each group must have url, start_date, and end_date' 
+        return res.status(400).json({
+          error: 'Each group must have url, start_date, and end_date'
         });
       }
 
       if (!isValidGroupUrl(group.url)) {
-        return res.status(400).json({ 
-          error: 'Invalid Facebook group URL: ' + group.url 
+        return res.status(400).json({
+          error: 'Invalid Facebook group URL: ' + group.url
         });
       }
 
       // Validate start date and time
       if (!isValidDateFormat(group.start_date)) {
-        return res.status(400).json({ 
-          error: 'Invalid start date format. Use YYYY-MM-DD: ' + group.start_date 
+        return res.status(400).json({
+          error: 'Invalid start date format. Use YYYY-MM-DD: ' + group.start_date
         });
       }
       if (group.start_time && !isValidTimeFormat(group.start_time)) {
-        return res.status(400).json({ 
-          error: 'Invalid start time format. Use HH:mm:ss: ' + group.start_time 
+        return res.status(400).json({
+          error: 'Invalid start time format. Use HH:mm:ss: ' + group.start_time
         });
       }
 
       // Validate end date and time
       if (!isValidDateFormat(group.end_date)) {
-        return res.status(400).json({ 
-          error: 'Invalid end date format. Use YYYY-MM-DD: ' + group.end_date 
+        return res.status(400).json({
+          error: 'Invalid end date format. Use YYYY-MM-DD: ' + group.end_date
         });
       }
       if (group.end_time && !isValidTimeFormat(group.end_time)) {
-        return res.status(400).json({ 
-          error: 'Invalid end time format. Use HH:mm:ss: ' + group.end_time 
+        return res.status(400).json({
+          error: 'Invalid end time format. Use HH:mm:ss: ' + group.end_time
         });
       }
 
@@ -115,8 +115,8 @@ app.post('/api/trigger', async (req, res) => {
       const startDateTime = new Date(group.start_date + 'T' + (group.start_time || '00:00:00'));
       const endDateTime = new Date(group.end_date + 'T' + (group.end_time || '23:59:59'));
       if (endDateTime < startDateTime) {
-        return res.status(400).json({ 
-          error: 'End datetime cannot be earlier than start datetime' 
+        return res.status(400).json({
+          error: 'End datetime cannot be earlier than start datetime'
         });
       }
     }
@@ -148,16 +148,16 @@ app.post('/api/trigger', async (req, res) => {
     });
 
     const response = await axios.post(
-      `https://api.brightdata.com/datasets/v3/trigger?${queryParams}`,
-      transformedBody,
-      {
-        headers: {
-          'Authorization': apiToken,
-          'Content-Type': 'application/json'
+        `https://api.brightdata.com/datasets/v3/trigger?${queryParams}`,
+        transformedBody,
+        {
+          headers: {
+            'Authorization': apiToken,
+            'Content-Type': 'application/json'
+          }
         }
-      }
     );
-    
+
     console.log('Brightdata response:', response.data);
     res.json(response.data);
   } catch (error) {
@@ -167,7 +167,7 @@ app.post('/api/trigger', async (req, res) => {
       message: error.message,
       stack: error.stack
     });
-    
+
     res.status(error.response?.status || 500).json({
       error: error.response?.data?.message || error.message || 'Internal server error'
     });
@@ -185,12 +185,12 @@ app.get('/api/progress/:snapshotId', async (req, res) => {
     const { snapshotId } = req.params;
 
     const response = await axios.get(
-      `https://api.brightdata.com/datasets/v3/progress/${snapshotId}`,
-      {
-        headers: {
-          'Authorization': apiToken
+        `https://api.brightdata.com/datasets/v3/progress/${snapshotId}`,
+        {
+          headers: {
+            'Authorization': apiToken
+          }
         }
-      }
     );
     res.json(response.data);
   } catch (error) {
@@ -218,13 +218,42 @@ app.get('/api/snapshots', async (req, res) => {
     console.log(`Fetching ${status} snapshots for dataset ${datasetId}`);
 
     const response = await axios.get(
-      `https://api.brightdata.com/datasets/v3/snapshots?dataset_id=${datasetId}&status=${status}`,
-      {
-        headers: {
-          'Authorization': apiToken
+        `https://api.brightdata.com/datasets/v3/snapshots?dataset_id=${datasetId}&status=${status}`,
+        {
+          headers: {
+            'Authorization': apiToken
+          }
         }
-      }
     );
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data?.message || error.message || 'Internal server error'
+    });
+  }
+});
+
+// Proxy endpoint for canceling a snapshot
+app.post('/api/snapshot/:snapshotId/cancel', async (req, res) => {
+  try {
+    const apiToken = formatApiToken(req.headers.apitoken);
+    if (!apiToken) {
+      return res.status(401).json({ error: 'API token is required' });
+    }
+
+    const { snapshotId } = req.params;
+
+    const response = await axios.post(
+        `https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}/cancel`,
+        {},
+        {
+          headers: {
+            'Authorization': apiToken,
+            'Content-Type': 'application/json'
+          }
+        }
+    );
+
     res.json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({
@@ -245,15 +274,15 @@ app.get('/api/snapshot/:snapshotId', async (req, res) => {
     const { format = 'csv' } = req.query;
 
     const response = await axios.get(
-      `https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}?format=${format}`,
-      {
-        headers: {
-          'Authorization': apiToken
-        },
-        responseType: 'stream'
-      }
+        `https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}?format=${format}`,
+        {
+          headers: {
+            'Authorization': apiToken
+          },
+          responseType: 'stream'
+        }
     );
-    
+
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=snapshot-${snapshotId}.csv`);
     response.data.pipe(res);
@@ -282,5 +311,6 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/progress/:snapshotId       - Check collection status`);
   console.log(`  GET  /api/snapshots                  - Get snapshots list`);
   console.log(`  GET  /api/snapshot/:snapshotId       - Download snapshot`);
+  console.log(`  POST /api/snapshot/:snapshotId/cancel - Cancel snapshot`);
   console.log(`  POST /webhook                        - Webhook endpoint`);
 });
