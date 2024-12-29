@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Download, RefreshCw, List, AlertCircle, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Download, RefreshCw, List, AlertCircle } from 'lucide-react';
 import SnapshotsList from './SnapshotsList'; // Ensure SnapshotsList is correctly imported
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -15,8 +15,6 @@ const DataCollector = () => {
   const [downloading, setDownloading] = useState('');
   const [canceling, setCanceling] = useState('');
   const [error, setError] = useState('');
-  const [expandedSections, setExpandedSections] = useState({ ready: false, running: false, failed: false });
-  const ITEMS_PER_PAGE = 5;
 
   // Updated state for common date range, time, and group IDs
   const [groupIds, setGroupIds] = useState('');
@@ -225,13 +223,6 @@ const DataCollector = () => {
     }
   };
 
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'ready': return 'text-green-500';
@@ -240,8 +231,6 @@ const DataCollector = () => {
       default: return 'text-gray-500';
     }
   };
-
-  // Removed the SnapshotsList component definition from inside DataCollector
 
   return (
       <div className="bg-white shadow rounded-lg p-6">
