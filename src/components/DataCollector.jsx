@@ -172,22 +172,13 @@ const DataCollector = () => {
         fetchSnapshotsForStatus('failed')
       ]);
 
-      console.log('Raw Snapshots:', { ready, running, failed });
-
-      // Sort snapshots by ID in descending order (assuming newer snapshots have higher ID numbers)
+      // Sort snapshots by timestamp in descending order
       const sortSnapshots = (snapshots) => {
-        // Make a copy of the array to avoid mutating the original
-        const sorted = [...snapshots];
-
-        // Sort by ID, extracting only the numeric part
-        sorted.sort((a, b) => {
-          const idA = parseInt(a.id.replace(/\D/g, ''));
-          const idB = parseInt(b.id.replace(/\D/g, ''));
-          return idB - idA;  // Descending order (newest/highest IDs first)
+        return [...snapshots].sort((a, b) => {
+          const timestampA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const timestampB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timestampB - timestampA; // Descending order (newest first)
         });
-
-        console.log('Sorted Snapshots:', sorted);
-        return sorted;
       };
 
       setSnapshots({
@@ -252,9 +243,48 @@ const DataCollector = () => {
   const SnapshotsList = ({ title, snapshots, status }) => {
     if (!snapshots.length) return null;
 
-    const displayedSnapshots = expandedSections[status]
-        ? snapshots
-        : snapshots.slice(0, ITEMS_PER_PAGE);
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.ceil(snapshots.length / ITEMS_PER_PAGE);
+
+    const displayedSnapshots = snapshots.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const goToPage = (page) => {
+      setCurrentPage(Math.min(Math.max(1, page), totalPages));
+    };
+
+    // Generate array of page numbers to show
+    const getPageNumbers = () => {
+      const pages = [];
+      if (totalPages <= 7) {
+        // If 7 or fewer pages, show all
+        for (let i = 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Always show first page
+        pages.push(1);
+
+        if (currentPage > 3) {
+          pages.push('...');
+        }
+
+        // Show pages around current page
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(currentPage + 1, totalPages - 1); i++) {
+          pages.push(i);
+        }
+
+        if (currentPage < totalPages - 2) {
+          pages.push('...');
+        }
+
+        // Always show last page
+        pages.push(totalPages);
+      }
+      return pages;
+    };
 
     return (
         <div className="mt-4">
@@ -313,14 +343,44 @@ const DataCollector = () => {
                   )}
                 </div>
             ))}
-            {snapshots.length > ITEMS_PER_PAGE && (
-                <button
-                    onClick={() => toggleSection(status)}
-                    className="flex items-center justify-center w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <ChevronDown className={`h-4 w-4 mr-1 transform ${expandedSections[status] ? 'rotate-180' : ''}`} />
-                  {expandedSections[status] ? 'Show Less' : `Show ${snapshots.length - ITEMS_PER_PAGE} More`}
-                </button>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-2 mt-4">
+                  <button
+                      onClick={() => goToPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-2 py-1 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    First
+                  </button>
+
+                  {getPageNumbers().map((pageNumber, index) => (
+                      pageNumber === '...' ? (
+                          <span key={`ellipsis-${index}`} className="text-gray-500">...</span>
+                      ) : (
+                          <button
+                              key={pageNumber}
+                              onClick={() => goToPage(pageNumber)}
+                              className={`px-3 py-1 text-sm font-medium rounded-md ${
+                                  currentPage === pageNumber
+                                      ? 'bg-blue-600 text-white'
+                                      : 'text-gray-700 bg-white hover:bg-gray-50'
+                              }`}
+                          >
+                            {pageNumber}
+                          </button>
+                      )
+                  ))}
+
+                  <button
+                      onClick={() => goToPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-2 py-1 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Last
+                  </button>
+                </div>
             )}
           </div>
         </div>
