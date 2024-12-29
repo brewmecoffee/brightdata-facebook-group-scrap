@@ -172,13 +172,22 @@ const DataCollector = () => {
         fetchSnapshotsForStatus('failed')
       ]);
 
-      // Sort snapshots by timestamp in descending order
+      console.log('Raw Snapshots:', { ready, running, failed });
+
+      // Sort snapshots by ID in descending order (assuming newer snapshots have higher ID numbers)
       const sortSnapshots = (snapshots) => {
-        return [...snapshots].sort((a, b) => {
-          const timestampA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-          const timestampB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-          return timestampB - timestampA; // Descending order (newest first)
+        // Make a copy of the array to avoid mutating the original
+        const sorted = [...snapshots];
+
+        // Sort by ID, extracting only the numeric part
+        sorted.sort((a, b) => {
+          const idA = parseInt(a.id.replace(/\D/g, ''));
+          const idB = parseInt(b.id.replace(/\D/g, ''));
+          return idB - idA;  // Descending order (newest/highest IDs first)
         });
+
+        console.log('Sorted Snapshots:', sorted);
+        return sorted;
       };
 
       setSnapshots({
@@ -380,7 +389,7 @@ const DataCollector = () => {
                       <select
                           value={startTime.split(':')[0]}
                           onChange={(e) => {
-                            const [_, m, s] = startTime.split(':');
+                            const [, m, s] = startTime.split(':');
                             setStartTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
                           }}
                           className="pl-8 p-2 border rounded-l-md shadow-sm w-24"
@@ -395,7 +404,7 @@ const DataCollector = () => {
                       <select
                           value={startTime.split(':')[1]}
                           onChange={(e) => {
-                            const [h, _, s] = startTime.split(':');
+                            const [h, , s] = startTime.split(':');
                             setStartTime(`${h}:${e.target.value}:${s}`);
                           }}
                           className="p-2 border-t border-b border-r shadow-sm w-20"
@@ -410,7 +419,7 @@ const DataCollector = () => {
                       <select
                           value={startTime.split(':')[2]}
                           onChange={(e) => {
-                            const [h, m, _] = startTime.split(':');
+                            const [h, m, ] = startTime.split(':');
                             setStartTime(`${h}:${m}:${e.target.value}`);
                           }}
                           className="p-2 border rounded-r-md shadow-sm w-20"
@@ -446,7 +455,7 @@ const DataCollector = () => {
                       <select
                           value={endTime.split(':')[0]}
                           onChange={(e) => {
-                            const [_, m, s] = endTime.split(':');
+                            const [, m, s] = endTime.split(':');
                             setEndTime(`${e.target.value.padStart(2, '0')}:${m}:${s}`);
                           }}
                           className="pl-8 p-2 border rounded-l-md shadow-sm w-24"
@@ -461,7 +470,7 @@ const DataCollector = () => {
                       <select
                           value={endTime.split(':')[1]}
                           onChange={(e) => {
-                            const [h, _, s] = endTime.split(':');
+                            const [h, , s] = endTime.split(':');
                             setEndTime(`${h}:${e.target.value}:${s}`);
                           }}
                           className="p-2 border-t border-b border-r shadow-sm w-20"
@@ -476,7 +485,7 @@ const DataCollector = () => {
                       <select
                           value={endTime.split(':')[2]}
                           onChange={(e) => {
-                            const [h, m, _] = endTime.split(':');
+                            const [h, m, ] = endTime.split(':');
                             setEndTime(`${h}:${m}:${e.target.value}`);
                           }}
                           className="p-2 border rounded-r-md shadow-sm w-20"
